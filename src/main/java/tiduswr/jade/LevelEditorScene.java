@@ -1,6 +1,7 @@
 package tiduswr.jade;
 
 import org.lwjgl.BufferUtils;
+import tiduswr.render.Shader;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -50,24 +51,16 @@ public class LevelEditorScene extends Scene {
 
     private int vaoID, vboID, eboID;
 
+    private Shader defaultShader;
+
     public LevelEditorScene(){
 
     }
 
     @Override
     public void init() {
-        //Compile and link shaders
-
-        //Load and compile the vertex shader
-        vertexID = glCreateShader(GL_VERTEX_SHADER);
-        fragmentID = glCreateShader(GL_FRAGMENT_SHADER);
-
-        //Vertex and Fragment compilation
-        loadAndCompileShader(vertexID, vertexShaderSrc, "Vertex");
-        loadAndCompileShader(fragmentID, fragmentShaderSrc, "Fragment");
-
-        //Link shaders
-        linkShaders();
+        defaultShader = new Shader("assets/shaders/default.glsl");
+        defaultShader.compile();
 
         //Generates VBO
         vaoID = glGenVertexArrays();
@@ -105,44 +98,10 @@ public class LevelEditorScene extends Scene {
 
     }
 
-    private void linkShaders(){
-        //Link shaders and check for errors
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexID);
-        glAttachShader(shaderProgram, fragmentID);
-        glLinkProgram(shaderProgram);
-
-        //Check for linking errors
-        int success = glGetProgrami(shaderProgram, GL_LINK_STATUS);
-        if(success == GL_FALSE){
-            int len = glGetProgrami(shaderProgram, GL_INFO_LOG_LENGTH);
-            System.err.println("Error: 'default.glsl'\n\tLinking Shaders failed.");
-            System.err.println(glGetProgramInfoLog(shaderProgram, len));
-            throw new RuntimeException("Error: 'default.glsl'\n\tLinking Shaders failed.");
-        }
-    }
-
-    private void loadAndCompileShader(int id, String shaderSrc, String type){
-        //Pass the shader source to the GPU
-        glShaderSource(id, shaderSrc);
-        glCompileShader(id);
-
-        //Check for errors in compilation
-        int success = glGetShaderi(id, GL_COMPILE_STATUS);
-        if(success == GL_FALSE){
-            int len = glGetShaderi(id, GL_INFO_LOG_LENGTH);
-            System.err.println("Error: 'default.glsl'");
-            System.err.println(glGetShaderInfoLog(id, len));
-            throw new RuntimeException("Error: 'default.glsl'\n\t" + type +" Shader compilation failed.");
-        }
-
-    }
-
     @Override
     public void update(float dt) {
 
-        // Bind shader program
-        glUseProgram(shaderProgram);
+        defaultShader.use();
 
         // Bind the VAO that were using
         glBindVertexArray(vaoID);
@@ -159,7 +118,7 @@ public class LevelEditorScene extends Scene {
 
         glBindVertexArray(0);
 
-        glUseProgram(0);
+        defaultShader.detach();
     }
 
 }
